@@ -321,10 +321,7 @@ PageRenderer.prototype._setupWebpageEvents = function () {
         this._logMessage(msgStack.join('\n'));
     });
 
-    var cssReloaded = false;
-
     this.webpage.on('load', () => {
-        cssReloaded = false;
         this.webpage.evaluate(function () {
             var $ = window.jQuery;
             if ($) {
@@ -394,9 +391,8 @@ PageRenderer.prototype._setupWebpageEvents = function () {
             this._logMessage('Unable to load resource (URL:' + request.url() + '): ' + errorMessage);
         }
 
-        if (request.url().indexOf('action=getCss') !== -1 && !cssReloaded) {
+        if (request.url().indexOf('action=getCss') !== -1 && request.url().indexOf('&reload=1') === -1) {
             console.log('Loading CSS failed... Try adding it with another style tag.');
-            cssReloaded = true;
             await this.webpage.addStyleTag({url: request.url() + '&reload=1'}); // add another get parameter to ensure browser doesn't use cache
             await this.webpage.waitFor(200);
         }
@@ -414,7 +410,7 @@ PageRenderer.prototype._setupWebpageEvents = function () {
 
         // if response of css request does not start with /*, we assume it had an error and try to load it again
         // Note: We can't do that in requestfailed only, as the response code might be 200 even if it throws an exception
-        if (request.url().indexOf('action=getCss') !== -1 && !cssReloaded && (await response.buffer()).toString().substring(0, 2) !== '/*') {
+        if (request.url().indexOf('action=getCss') !== -1 && request.url().indexOf('&reload=1') === -1 && (await response.buffer()).toString().substring(0, 2) !== '/*') {
             console.log('Loading CSS failed... Try adding it with another style tag.');
             cssReloaded = true;
             await this.webpage.addStyleTag({url: request.url() + '&reload=1'}); // add another get parameter to ensure browser doesn't use cache
